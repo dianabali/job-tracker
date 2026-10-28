@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if a else 'New' }} application{% endblock %}
+{% block content %}
+<h1>{{ 'Edit ' ~ a.company if a else 'Add application' }}</h1>
+<form method="post" class="stack panel">
+  <div class="grid2">
+    <label>Company <input name="company" required value="{{ a.company if a }}"></label>
+    <label>Role <input name="role" required value="{{ a.role if a }}"></label>
+    <label>Location <input name="location" value="{{ a.location or '' if a }}"></label>
+    <label>Job posting URL <input type="url" name="url" value="{{ a.url or '' if a }}"></label>
+    <label>Salary range <input name="salary" value="{{ a.salary or '' if a }}"></label>
+    <label>Stage
+      <select name="stage">{% for s in stages %}<option {{ 'selected' if s == default_stage }}>{{ s }}</option>{% endfor %}</select>
+    </label>
+    <label>Deadline <input type="date" name="deadline" value="{{ a.deadline if a and a.deadline }}"></label>
+    <label>Date applied <input type="date" name="date_applied" value="{{ a.date_applied if a and a.date_applied }}"></label>
+    <label>Offer amount <input name="offer_amount" placeholder="Only if you received an offer" value="{{ a.offer_amount or '' if a }}"></label>
+  </div>
+  <label>Notes <textarea name="notes" rows="5">{{ a.notes or '' if a }}</textarea></label>
+  <div class="row">
+    <button class="btn primary">Save</button>
+    <a href="{{ url_for('detail', app_id=a.id) if a else url_for('board') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

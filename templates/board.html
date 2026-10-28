@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="filters" method="get">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search company, role, location or notes">
+  <select name="stage" aria-label="Stage">
+    <option value="">All stages</option>
+    {% for s in stages %}<option {{ 'selected' if s == stage }}>{{ s }}</option>{% endfor %}
+  </select>
+  <select name="due" aria-label="Deadline">
+    <option value="">Any deadline</option>
+    <option value="week" {{ 'selected' if due == 'week' }}>Due within 7 days</option>
+  </select>
+  <button class="btn">Filter</button>
+  {% if q or stage or due %}<a href="{{ url_for('board') }}">Clear</a>{% endif %}
+</form>
+
+<div class="board">
+  {% for s in stages %}
+  <section class="col stage-{{ s|lower }}" data-stage="{{ s }}">
+    <h2>{{ s }} <span class="count">{{ columns[s]|length }}</span></h2>
+    <div class="dropzone">
+      {% for a in columns[s] %}
+      <article class="card" draggable="true" data-id="{{ a.id }}">
+        <a class="card-title" href="{{ url_for('detail', app_id=a.id) }}">{{ a.company }}</a>
+        <div class="role">{{ a.role }}</div>
+        {% if a.location %}<div class="meta">{{ a.location }}</div>{% endif %}
+        {% if a.deadline and a.stage in ('Wishlist', 'Applied') %}
+          <div class="chip {{ 'late' if a.days_to_deadline < 0 else 'soon' if a.days_to_deadline <= 7 }}">
+            Due {{ a.deadline.strftime('%d %b') }}
+          </div>
+        {% endif %}
+        {% if a.stage == 'Offer' and a.offer_amount %}<div class="chip good">{{ a.offer_amount }}</div>{% endif %}
+        {% set nxt = a.interviews|rejectattr('done')|list %}
+        {% if nxt %}<div class="meta">Next: {{ nxt[0].kind }}, {{ nxt[0].when.strftime('%d %b %H:%M') }}</div>{% endif %}
+      </article>
+      {% else %}
+      <p class="empty">Drop a card here</p>
+      {% endfor %}
+    </div>
+    <a class="add" href="{{ url_for('new_application', stage=s) }}">+ Add to {{ s }}</a>
+  </section>
+  {% endfor %}
+</div>
+
+<script>
+let dragged = null;
+document.querySelectorAll('.card').forEach(c => {
+  c.addEventListener('dragstart', () => { dragged = c; c.classList.add('dragging'); });
+  c.addEventListener('dragend', () => c.classList.remove('dragging'));
+});
+document.querySelectorAll('.col').forEach(col => {
+  col.addEventListener('dragover', e => { e.preventDefault(); col.classList.add('over'); });
+  col.addEventListener('dragleave', () => col.classList.remove('over'));
+  col.addEventListener('drop', async e => {
+    e.preventDefault(); col.classList.remove('over');
+    if (!dragged) return;
+    const zone = col.querySelector('.dropzone');
+    zone.querySelector('.empty')?.remove();
+    zone.appendChild(dragged);
+    const res = await fetch(`/applications/${dragged.dataset.id}/move`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({stage: col.dataset.stage})
+    });
+    if (res.ok) location.reload(); else alert('Could not move that card. Try again.');
+  });
+});
+</script>
+{% endblock %}

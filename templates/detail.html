@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ a.company }}{% endblock %}
+{% block content %}
+<div class="detail-head">
+  <div>
+    <h1>{{ a.company }}</h1>
+    <p class="role">{{ a.role }}{% if a.location %} — {{ a.location }}{% endif %}</p>
+  </div>
+  <div class="row">
+    <span class="pill stage-{{ a.stage|lower }}">{{ a.stage }}</span>
+    <a class="btn" href="{{ url_for('edit_application', app_id=a.id) }}">Edit</a>
+    <form method="post" action="{{ url_for('delete_application', app_id=a.id) }}"
+          onsubmit="return confirm('Delete {{ a.company }} and its contacts and interviews?')">
+      <button class="btn danger">Delete</button>
+    </form>
+  </div>
+</div>
+
+<div class="two-col">
+  <div>
+    <section class="panel">
+      <h2>Details</h2>
+      <dl>
+        {% if a.url %}<dt>Posting</dt><dd><a href="{{ a.url }}" target="_blank" rel="noopener">{{ a.url }}</a></dd>{% endif %}
+        {% if a.salary %}<dt>Salary range</dt><dd>{{ a.salary }}</dd>{% endif %}
+        {% if a.deadline %}<dt>Deadline</dt><dd>{{ a.deadline.strftime('%d %b %Y') }}</dd>{% endif %}
+        {% if a.date_applied %}<dt>Applied</dt><dd>{{ a.date_applied.strftime('%d %b %Y') }}</dd>{% endif %}
+        {% if a.offer_amount %}<dt>Offer</dt><dd><strong>{{ a.offer_amount }}</strong></dd>{% endif %}
+      </dl>
+      {% if a.notes %}<p class="notes">{{ a.notes }}</p>{% endif %}
+    </section>
+
+    <section class="panel" id="interviews">
+      <h2>Interviews</h2>
+      {% for i in a.interviews %}
+      <form class="interview {{ 'done' if i.done }}" id="interview-{{ i.id }}" method="post"
+            action="{{ url_for('update_interview', iid=i.id) }}">
+        <div class="row between">
+          <strong>{{ i.kind }} · {{ i.when.strftime('%a %d %b %Y, %H:%M') }}</strong>
+          <span class="meta">{{ 'Done' if i.done else 'Reminder ' ~ i.remind_hours ~ 'h before' }}</span>
+        </div>
+        <textarea name="notes" rows="3" placeholder="Questions asked, who you met, follow-ups…">{{ i.notes or '' }}</textarea>
+        <div class="row">
+          <label class="inline"><input type="checkbox" name="done" {{ 'checked' if i.done }}> Completed</label>
+          <button class="btn">Save notes</button>
+          <button class="btn danger" formaction="{{ url_for('delete_interview', iid=i.id) }}"
+                  formnovalidate onclick="return confirm('Delete this interview?')">Delete</button>
+        </div>
+      </form>
+      {% else %}<p class="empty">No interviews yet. Add one below and it will show up as a reminder.</p>{% endfor %}
+
+      <form method="post" action="{{ url_for('add_interview', app_id=a.id) }}" class="stack add-form">
+        <h3>Schedule an interview</h3>
+        <div class="grid3">
+          <label>Type <select name="kind">{% for t in types %}<option>{{ t }}</option>{% endfor %}</select></label>
+          <label>Date and time <input type="datetime-local" name="when" required></label>
+          <label>Remind me <select name="remind_hours">
+            <option value="2">2 hours before</option><option value="24" selected>1 day before</option>
+            <option value="72">3 days before</option></select></label>
+        </div>
+        <button class="btn primary">Add interview</button>
+      </form>
+    </section>
+  </div>
+
+  <section class="panel" id="contacts">
+    <h2>Contacts</h2>
+    {% for c in a.contacts %}
+    <div class="contact">
+      <div><strong>{{ c.name }}</strong>{% if c.title %}<span class="meta"> {{ c.title }}</span>{% endif %}</div>
+      {% if c.email %}<a href="mailto:{{ c.email }}">{{ c.email }}</a>{% endif %}
+      {% if c.phone %}<div class="meta">{{ c.phone }}</div>{% endif %}
+      <form method="post" action="{{ url_for('delete_contact', cid=c.id) }}"><button class="link">Remove</button></form>
+    </div>
+    {% else %}<p class="empty">No contacts saved for this company.</p>{% endfor %}
+    <form method="post" action="{{ url_for('add_contact', app_id=a.id) }}" class="stack add-form">
+      <h3>Add a contact</h3>
+      <input name="name" placeholder="Name" required>
+      <input name="title" placeholder="Title (recruiter, hiring manager…)">
+      <input type="email" name="email" placeholder="Email">
+      <input name="phone" placeholder="Phone">
+      <button class="btn primary">Add contact</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

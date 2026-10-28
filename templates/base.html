@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Job Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="{{ url_for('board') }}">Job Tracker</a>
+  <nav>
+    <a href="{{ url_for('board') }}" {% if request.endpoint == 'board' %}aria-current="page"{% endif %}>Board</a>
+    <a href="{{ url_for('stats') }}" {% if request.endpoint == 'stats' %}aria-current="page"{% endif %}>Statistics</a>
+    <a class="btn primary" href="{{ url_for('new_application') }}">Add application</a>
+  </nav>
+</header>
+
+{% with msgs = get_flashed_messages() %}{% if msgs %}
+  <div class="flash">{% for m in msgs %}<p>{{ m }}</p>{% endfor %}</div>
+{% endif %}{% endwith %}
+
+{% if reminders %}
+<section class="reminders" aria-label="Reminders">
+  <strong>Coming up</strong>
+  <ul>
+    {% for kind, a, label in reminders %}
+      <li class="{{ kind }}"><a href="{{ url_for('detail', app_id=a.id) }}">{{ a.company }}</a> — {{ label }}</li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<main>{% block content %}{% endblock %}</main>
+</body>
+</html>

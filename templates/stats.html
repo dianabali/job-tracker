@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Statistics{% endblock %}
+{% block content %}
+<h1>Statistics</h1>
+{% if not total %}
+  <p class="empty">Nothing to measure yet. <a href="{{ url_for('new_application') }}">Add your first application</a>.</p>
+{% else %}
+<div class="kpis">
+  <div class="kpi"><b>{{ total }}</b>tracked</div>
+  <div class="kpi"><b>{{ submitted }}</b>submitted</div>
+  <div class="kpi"><b>{{ response_rate }}%</b>heard back</div>
+  <div class="kpi"><b>{{ interview_rate }}%</b>reached interview</div>
+  <div class="kpi"><b>{{ offer_rate }}%</b>got an offer</div>
+</div>
+
+<div class="two-col">
+  <section class="panel">
+    <h2>Applications by stage</h2>
+    {% for s in stages %}
+    <div class="bar-row">
+      <span>{{ s }}</span>
+      <div class="bar"><i class="stage-{{ s|lower }}" style="width: {{ (100 * counts[s] / total)|round }}%"></i></div>
+      <span>{{ counts[s] }}</span>
+    </div>
+    {% endfor %}
+  </section>
+
+  <section class="panel">
+    <h2>Submitted per week</h2>
+    <div class="weeks">
+      {% for label, n in weeks %}
+      <div class="week"><span>{{ n }}</span><i style="height: {{ (100 * n / max_week)|round }}%"></i><small>{{ label }}</small></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Upcoming interviews</h2>
+  {% for i in upcoming %}
+    <p><a href="{{ url_for('detail', app_id=i.application_id) }}">{{ i.application.company }}</a> — {{ i.kind }}, {{ i.when.strftime('%a %d %b, %H:%M') }}</p>
+  {% else %}<p class="empty">No interviews scheduled.</p>{% endfor %}
+</section>
+{% endif %}
+{% endblock %}
